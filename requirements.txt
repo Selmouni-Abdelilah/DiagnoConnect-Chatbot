@@ -1,0 +1,10 @@
+streamlit==1.32.2
+python-dotenv==0.19.1
+langchain==0.0.276
+azure-ai-formrecognizer==3.3.0
+azure-common==1.1.28
+azure-core==1.29.4
+azure-identity==1.14.0
+azure-search-documents==11.4.0b8
+azure-storage-blob==12.18.2
+openai==0.28
