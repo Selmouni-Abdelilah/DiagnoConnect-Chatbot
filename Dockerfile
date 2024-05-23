@@ -11,7 +11,7 @@ RUN apt-get -y update && \
     pip install -U pip && pip install --no-cache-dir -r requirements.txt && \
     adduser --disabled-password --gecos '' appuser
 
-COPY app.py /app
+COPY . .
 
 
 EXPOSE 8501

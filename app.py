@@ -48,7 +48,7 @@ AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 
 # Default items
 DEFAULT_EMBEDDING_MODEL = "text-embedding-ada-002"
-DEFAULT_CHAT_MODEL = "gpt-35-turbo"
+DEFAULT_CHAT_MODEL = "gpt-4o"
 DEFAULT_SEARCH_INDEX = "docindex"
 DEFAULT_SEARCH_FILE_EXTENSION = ".pdf"
 LOAD_VECTORS = True 
@@ -277,38 +277,56 @@ def initialize_azure_blob_client():
     return blob_service_client.get_container_client(STORAGE_CONTAINER_NAME)
 
 def main():
-
     if LOAD_VECTORS:
         EmbeddingPipeline().perform_embedding_pipeline()
     else:
         logger.info(f"Retrieving the stored vectors from an Azure Search index: '{DEFAULT_SEARCH_INDEX}'")
 
     ### STREAMLIT UI
+    # Set page configuration
+    st.set_page_config(
+        page_title="Medical Assistant",
+        page_icon="🤖",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    # Sidebar
+    with st.sidebar:
+        st.title("Welcome to our intelligent medical assistant")
+        st.info(
+            "Please upload your documents and use the chat interface below. 🤖"
+        )
+    # Main content
+    st.title("👨‍⚕️ Medical Assistant")
 
-    st.set_page_config(page_title="my assistant")
-    st.title("My Assistant")
-    uploaded_file = st.file_uploader("Upload PDF File", type=["pdf"])
 
+    uploaded_file = st.file_uploader(type=["pdf"],label=":file_folder:",key="fileUploader",label_visibility="collapsed")
     if uploaded_file is not None:
-        container_client = initialize_azure_blob_client()
-        
-        # Upload the file to Azure Blob Storage
-        blob_client = container_client.get_blob_client(uploaded_file.name)
-        blob_client.upload_blob(uploaded_file)
+        # Check if the file has already been uploaded
+        if "uploaded_files" not in st.session_state:
+            st.session_state.uploaded_files = {}
 
-        st.success(f"File uploaded successfully to Azure Blob Storage: {uploaded_file.name}")
+        if uploaded_file.name not in st.session_state.uploaded_files:
+            container_client = initialize_azure_blob_client()
+            # Upload the file to Azure Blob Storage
+            blob_client = container_client.get_blob_client(uploaded_file.name)
+            blob_client.upload_blob(uploaded_file)
+            st.session_state.uploaded_files[uploaded_file.name] = True
 
+            st.success(f"File uploaded successfully to Azure Blob Storage: {uploaded_file.name}")
+        else:
+            st.info(f"File already uploaded: {uploaded_file.name}")
 
     # Initialize chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Display chat messages from history on app rerun
+    # Display chat messages from history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Accept user input
+     # Accept user input
     if prompt := st.chat_input("Enter your query"):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
